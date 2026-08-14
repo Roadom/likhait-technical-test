@@ -53,6 +53,7 @@ class Api::ExpensesController < ApplicationController
       description: expense.description,
       amount: expense.amount.to_f,
       category: {
+        id: expense.category.id,
         name: expense.category.name,
         emoji: expense.category.emoji
       },

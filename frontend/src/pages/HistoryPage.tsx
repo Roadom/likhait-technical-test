@@ -85,7 +85,7 @@ const HistoryPage: React.FC = () => {
   // Calculate category breakdown
   const categoryData = expenses.reduce(
     (acc, expense) => {
-      const category = expense.category || "Uncategorized";
+      const category = expense.category?.name || "Uncategorized";
       if (!acc[category]) {
         acc[category] = { category, amount: 0, count: 0 };
       }
