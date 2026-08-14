@@ -6,7 +6,10 @@ export interface Expense {
   id: number;
   amount: number;
   description: string;
-  category: string;
+  category: {
+    name: string;
+    emoji: string;
+  };
   date: string;
   created_at: string;
   updated_at: string;
