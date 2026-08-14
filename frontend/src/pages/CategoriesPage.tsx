@@ -1,32 +1,17 @@
-import React, { useState } from "react";
-import { Button, Modal, TextField } from "../vibes";
+import React, { useState, useEffect } from "react";
+import { Button, Modal, } from "../vibes";
 import { COLORS } from "../constants/colors";
-import { EXPENSE_CATEGORIES } from "../constants/categories";
-import { getCategoryEmoji } from "../constants/categoryEmojis";
 import { Pagination } from "../vibes/Pagination";
-
-interface Category {
-  id: number;
-  name: string;
-  emoji: string;
-}
+import { Category, CategoryFormData } from "../types";
+import { createCategory, fetchCategories } from "../services/api";
+import { CategoryForm } from "../components/CategoryForm"
 
 const CategoriesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("");
-
-  const [categories, setCategories] = useState<Category[]>(
-    EXPENSE_CATEGORIES.map((name, index) => ({
-        id: index + 1,
-        name,
-        emoji: getCategoryEmoji(name),
-    })),
-  );
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const categoriesPerPage = 4;
-
+  const categoriesPerPage = 8;
   const totalPages = Math.ceil(categories.length / categoriesPerPage);
 
   const displayedCategories = categories.slice(
@@ -34,21 +19,29 @@ const CategoriesPage: React.FC = () => {
     currentPage * categoriesPerPage,
   ); 
 
-  const handleAddCategory = () => {
-    if (!name.trim() || !emoji.trim()) return;
+  useEffect(() => {
+    const loadCategories = async () => {
+        try {
+        const data = await fetchCategories();
+        setCategories(data);
+        } catch (error) {
+        console.error("Error fetching categories:", error);
+        }
+    };
 
-    setCategories((current) => [
-      ...current,
-      {
-        id: Date.now(),
-        name: name.trim(),
-        emoji: emoji.trim(),
-      },
-    ]);
+    loadCategories();
+  }, []);
 
-    setName("");
-    setEmoji("");
-    setIsModalOpen(false);
+  const handleAddCategory = async (data: CategoryFormData) => {
+    try {
+        const newCategory = await createCategory(data);
+
+        setCategories((prev) => [...prev, newCategory]);
+        setIsModalOpen(false);
+    } catch (error) {
+        console.error("Error creating category:", error);
+        throw error;
+    }
   };
 
   const pageStyle: React.CSSProperties = {
@@ -126,43 +119,16 @@ const CategoriesPage: React.FC = () => {
         onPageChange={setCurrentPage}
       />
 
+      {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Add Category"
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
-          }}
-        >
-          <TextField
-            label="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            fullWidth
-            required
-          />
-
-          <TextField
-            label="Emoji"
-            value={emoji}
-            onChange={(e) => setEmoji(e.target.value)}
-            fullWidth
-            required
-          />
-
-          <Button
-            variant="primary"
-            onClick={handleAddCategory}
-            disabled={!name.trim() || !emoji.trim()}
-            fullWidth
-          >
-            Add Category
-          </Button>
-        </div>
+        <CategoryForm
+            onSubmit={handleAddCategory}
+            onCancel={() => setIsModalOpen(false)}
+        />
       </Modal>
     </div>
   );
