@@ -46,7 +46,7 @@ RSpec.describe "Api::Expenses", type: :request do
         expect(response).to have_http_status(:created)
         json = JSON.parse(response.body)
         expect(json["description"]).to eq("Team Lunch")
-        expect(json["amount"]).to eq("150.5")
+        expect(json["amount"]).to eq(150.5)
       end
     end
 
@@ -83,6 +83,64 @@ RSpec.describe "Api::Expenses", type: :request do
         }.to change(Expense, :count).by(1)
 
         expect(response).to have_http_status(:created)
+      end
+    end
+
+    # Creating new expense with invalid date
+    context "with invalid parameters" do
+      it "rejects a future expense date" do
+        invalid_params = {
+          expense: {
+            description: "Future expense",
+            amount: 100.00,
+            category_id: food_category.id,
+            date: Date.tomorrow
+          }
+        }
+
+        expect {
+          post "/api/expenses", params: invalid_params, as: :json
+        }.not_to change(Expense, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+
+        json = JSON.parse(response.body)
+        expect(json["errors"]).to include(
+          "Date must be less than or equal to #{Date.today}"
+        )
+      end
+    end
+  end
+
+  # Editing existing expense with an invalid date
+  describe "PATCH /api/expenses/:id" do
+    let!(:expense) do
+      Expense.create!(
+        description: "Existing expense",
+        amount: 100.00,
+        category: food_category,
+        date: Date.today
+      )
+    end
+
+    context "with invalid parameters" do
+      it "rejects updating an expense to a future date" do
+        invalid_params = {
+          expense: {
+            date: Date.tomorrow
+          }
+        }
+
+        patch "/api/expenses/#{expense.id}", params: invalid_params, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+
+        json = JSON.parse(response.body)
+        expect(json["errors"]).to include(
+          "Date must be less than or equal to #{Date.today}"
+        )
+
+        expect(expense.reload.date).to eq(Date.today)
       end
     end
   end
