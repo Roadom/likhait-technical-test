@@ -3,6 +3,7 @@ import { Button, Modal, TextField } from "../vibes";
 import { COLORS } from "../constants/colors";
 import { EXPENSE_CATEGORIES } from "../constants/categories";
 import { getCategoryEmoji } from "../constants/categoryEmojis";
+import { Pagination } from "../vibes/Pagination";
 
 interface Category {
   id: number;
@@ -15,11 +16,23 @@ const CategoriesPage: React.FC = () => {
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("");
 
-  const categories = EXPENSE_CATEGORIES.map((name, index) => ({
-    id: index + 1,
-    name,
-    emoji: getCategoryEmoji(name),
-  }));
+  const [categories, setCategories] = useState<Category[]>(
+    EXPENSE_CATEGORIES.map((name, index) => ({
+        id: index + 1,
+        name,
+        emoji: getCategoryEmoji(name),
+    })),
+  );
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const categoriesPerPage = 4;
+
+  const totalPages = Math.ceil(categories.length / categoriesPerPage);
+
+  const displayedCategories = categories.slice(
+    (currentPage - 1) * categoriesPerPage,
+    currentPage * categoriesPerPage,
+  ); 
 
   const handleAddCategory = () => {
     if (!name.trim() || !emoji.trim()) return;
@@ -59,10 +72,10 @@ const CategoriesPage: React.FC = () => {
   };
 
   const listStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
     gap: "12px",
-    maxWidth: "700px",
+    width: "1fr",
   };
 
   const categoryStyle: React.CSSProperties = {
@@ -99,13 +112,19 @@ const CategoriesPage: React.FC = () => {
       </div>
 
       <div style={listStyle}>
-        {categories.map((category) => (
+        {displayedCategories.map((category) => (
           <div key={category.id} style={categoryStyle}>
             <span style={emojiStyle}>{category.emoji}</span>
             <span style={nameStyle}>{category.name}</span>
           </div>
         ))}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
 
       <Modal
         isOpen={isModalOpen}
