@@ -1,6 +1,6 @@
 class Api::CategoriesController < ApplicationController
   def index
-    categories = Category.order(:created_at)
+    categories = Category.order(:name)
     render json: categories
   end
 
